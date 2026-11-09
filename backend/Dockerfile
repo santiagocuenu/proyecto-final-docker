@@ -26,8 +26,15 @@ EXPOSE 5000
 
 # Comando de arranque: Gunicorn, un servidor apto para producción
 # (el servidor de desarrollo de Flask se vuelve un cuello de botella).
-#   -w 2         -> 2 procesos
-#   --threads 4  -> 4 hilos por proceso (8 peticiones simultáneas por backend)
+#   --workers 1     -> UN solo proceso
+#   --threads 8     -> 8 hilos: 8 peticiones simultáneas por backend
+#                      (la misma capacidad que el lab: 2 procesos x 4 hilos)
 #   -b 0.0.0.0:5000 -> escucha en todas las interfaces del contenedor, puerto 5000
-#   app:app      -> el objeto "app" del archivo app.py
-CMD ["gunicorn", "-w", "2", "--threads", "4", "-b", "0.0.0.0:5000", "app:app"]
+#   app:app         -> el objeto "app" del archivo app.py
+#
+# ¿Por qué 1 proceso y no 2 como en el lab? prometheus_client guarda los
+# contadores en la memoria de CADA proceso. Con 2 procesos, cada visita de
+# Prometheus a /metrics caería en uno u otro al azar y los contadores
+# "saltarían" (incoherentes). Con 1 proceso y varios hilos, la memoria es
+# una sola y las métricas son exactas.
+CMD ["gunicorn", "--workers", "1", "--threads", "8", "-b", "0.0.0.0:5000", "app:app"]
