@@ -29,7 +29,7 @@ que el análisis.
 
 ## Resumen de la arquitectura (para la sección 2)
 
-- **9 contenedores** definidos en un solo `docker-compose.yml`, todos en la red bridge
+- **8 contenedores** definidos en un solo `docker-compose.yml`, todos en la red bridge
   personalizada **`red_proyecto`**, donde se encuentran por nombre gracias al DNS interno de
   Docker.
 - **Tráfico:** el navegador (o Artillery) entra solo por **Nginx** (puerto 8080 del host).

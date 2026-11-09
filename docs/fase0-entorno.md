@@ -58,4 +58,4 @@ Puertos que usará el proyecto, comprobados como libres: 8080 (Nginx), 3000 (Gra
 ## Nota para el informe
 
 Docker Desktop reserva para su máquina virtual unos 7,6 GiB de los 16 GB del equipo.
-Es suficiente para los 9 contenedores del proyecto.
+Es suficiente para los 8 contenedores del proyecto.

@@ -10,7 +10,7 @@ el más parecido (por ejemplo, **Add → Visualization** en lugar de **+ Add vis
 
 ## 0. Antes de empezar
 
-1. Asegúrense de que todo esté arriba: `docker compose ps` (9 contenedores).
+1. Asegúrense de que todo esté arriba: `docker compose ps` (8 contenedores).
 2. Para que haya datos en las gráficas, dejen corriendo en una terminal:
    ```bash
    artillery run loadtest/carga-100-por-segundo.yml
