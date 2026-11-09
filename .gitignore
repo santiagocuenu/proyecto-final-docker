@@ -3,3 +3,6 @@ node_modules/
 __pycache__/
 *.pyc
 .env
+
+# Instrucciones de trabajo locales (no se publican)
+CLAUDE.md
