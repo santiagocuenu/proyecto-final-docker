@@ -1,0 +1,20 @@
+# =============================================================================
+# Prueba de carga 3: 120 peticiones por SEGUNDO a "/" durante 1 minuto
+# -----------------------------------------------------------------------------
+# Unas 7.200 peticiones en total. Igual a la prueba 2, con un 20 % más de carga.
+#   artillery run loadtest/carga-120-por-segundo.yml
+# =============================================================================
+config:
+  target: "http://localhost:8080"   # Nginx publicado en el host
+  http:
+    timeout: 10                     # segundos de espera antes de dar la petición por fallida
+  phases:
+    - duration: 60                  # 60 segundos...
+      arrivalRate: 120              # ...llegando 120 usuarios virtuales nuevos cada segundo
+      name: "120 peticiones por segundo"
+
+scenarios:
+  # Cada usuario virtual hace UNA petición GET a "/" y termina.
+  - flow:
+      - get:
+          url: "/"

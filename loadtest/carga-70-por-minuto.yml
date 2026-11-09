@@ -1,0 +1,26 @@
+# =============================================================================
+# Prueba de carga 1: ~70 peticiones por MINUTO (carga ligera)
+# -----------------------------------------------------------------------------
+# La guía pide superar 65 peticiones por minuto. Se envían 70 repartidas en
+# 60 segundos (~1,2 por segundo) a la página principal.
+# Se ejecuta DESDE EL HOST (WSL), no desde un contenedor:
+#   artillery run loadtest/carga-70-por-minuto.yml
+# =============================================================================
+config:
+  # Nginx publicado en el host. Ya no es "http://nginx:80" como en el lab,
+  # porque Artillery ahora corre fuera de la red de Docker.
+  target: "http://localhost:8080"
+  http:
+    # Segundos que Artillery espera una respuesta antes de darla por fallida
+    # (10 es el valor por defecto; se escribe para que quede explícito).
+    timeout: 10
+  phases:
+    - duration: 60          # la fase dura 60 segundos
+      arrivalCount: 70      # en total llegan 70 usuarios virtuales, repartidos en esos 60 s
+      name: "70 peticiones en 1 minuto"
+
+scenarios:
+  # Cada usuario virtual hace UNA petición GET a "/" y termina.
+  - flow:
+      - get:
+          url: "/"

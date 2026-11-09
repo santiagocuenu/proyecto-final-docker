@@ -1,0 +1,5 @@
+carga-70-por-minuto | inicio 2026-11-09 14:17:58 | fin 2026-11-09 14:19:03
+carga-100-por-segundo | inicio 2026-11-09 14:19:08 | fin 2026-11-09 14:20:14
+carga-120-por-segundo | inicio 2026-11-09 14:20:18 | fin 2026-11-09 14:21:23
+saturacion-100-por-segundo | inicio 2026-11-09 14:21:31 | fin 2026-11-09 14:22:46
+saturacion-120-por-segundo | inicio 2026-11-09 14:24:05 | fin 2026-11-09 14:25:20

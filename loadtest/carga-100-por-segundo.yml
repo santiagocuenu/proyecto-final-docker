@@ -1,0 +1,21 @@
+# =============================================================================
+# Prueba de carga 2: 100 peticiones por SEGUNDO a "/" durante 1 minuto
+# -----------------------------------------------------------------------------
+# Unas 6.000 peticiones en total. Mide cómo se comporta el sistema "normal"
+# (página ligera) con una carga alta y constante.
+#   artillery run loadtest/carga-100-por-segundo.yml
+# =============================================================================
+config:
+  target: "http://localhost:8080"   # Nginx publicado en el host
+  http:
+    timeout: 10                     # segundos de espera antes de dar la petición por fallida
+  phases:
+    - duration: 60                  # 60 segundos...
+      arrivalRate: 100              # ...llegando 100 usuarios virtuales nuevos cada segundo
+      name: "100 peticiones por segundo"
+
+scenarios:
+  # Cada usuario virtual hace UNA petición GET a "/" y termina.
+  - flow:
+      - get:
+          url: "/"

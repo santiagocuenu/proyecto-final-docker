@@ -1,0 +1,21 @@
+# =============================================================================
+# Prueba de saturación 2: 120 peticiones por SEGUNDO a "/slow?ms=500"
+# -----------------------------------------------------------------------------
+# Mismo cálculo que la saturación 1: capacidad máxima = 24 / 0,5 = 48 req/s.
+# Se piden 120/s (2,5 veces la capacidad).
+#   artillery run loadtest/saturacion-120-por-segundo.yml
+# =============================================================================
+config:
+  target: "http://localhost:8080"   # Nginx publicado en el host
+  http:
+    timeout: 10                     # tras 10 s sin respuesta, Artillery cuenta un error de timeout
+  phases:
+    - duration: 60
+      arrivalRate: 120
+      name: "120 peticiones por segundo a /slow (500 ms)"
+
+scenarios:
+  # Cada usuario virtual pide /slow?ms=500: el backend tarda medio segundo.
+  - flow:
+      - get:
+          url: "/slow?ms=500"
