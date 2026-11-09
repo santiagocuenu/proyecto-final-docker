@@ -66,7 +66,7 @@ que el análisis.
 ## Problemas encontrados y cómo se resolvieron (muy valorado en el informe)
 
 1. Docker no existía en WSL → activar la integración de Docker Desktop (fase 0).
-2. `sudo` no funciona con el prefijo `!` de Claude Code → instalar en otra pestaña (fase 0).
+2. `sudo` falló en una terminal no interactiva → instalar en una pestaña normal de WSL (fase 0).
 3. Reparto desigual 11/1/0 por los 12 workers de Nginx → `zone` (fase 1).
 4. Nginx no arrancaba tras editar `nginx.conf` (montaje de archivo suelto) → montar la carpeta (fase 1).
 5. `charset` duplicado en `/metrics` → `content_type=` (fase 2).

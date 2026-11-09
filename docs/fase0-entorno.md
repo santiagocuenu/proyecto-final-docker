@@ -48,9 +48,9 @@ Puertos que usará el proyecto, comprobados como libres: 8080 (Nginx), 3000 (Gra
 
 ## Problemas encontrados
 
-- `sudo` no funciona con el prefijo `!` de Claude Code (*"A terminal is required to
-  authenticate"*), porque no hay una terminal real donde escribir la contraseña.
-  Solución: ejecutar la instalación en otra pestaña de WSL.
+- El primer intento de instalación se lanzó desde una terminal no interactiva y `sudo` falló
+  (*"A terminal is required to authenticate"*): no había una terminal real donde escribir la
+  contraseña. Solución: ejecutar la instalación en una pestaña normal de WSL.
 - Docker Desktop usa el almacén de imágenes de containerd (`storage=overlayfs`) y cgroup v2.
   Es un dato a tener en cuenta en la Fase 4: con esta configuración, cAdvisor puede no mostrar
   los nombres de los contenedores.
