@@ -4,8 +4,8 @@
 # Describe en un solo archivo todos los contenedores de la infraestructura.
 # Se levanta con:   docker compose up -d --build
 #
-# Fase 1 (base): 3 backends + Nginx. El monitoreo (Prometheus, Grafana,
-# nginx-exporter y cAdvisor) se agrega en la Fase 4.
+# Servicios: 3 backends + Nginx (tráfico) y nginx-exporter, cAdvisor y
+# Prometheus (monitoreo). Grafana se agrega en la Fase 5.
 # =============================================================================
 
 services:
@@ -87,6 +87,121 @@ services:
         condition: service_healthy
     networks:
       - red_proyecto
+
+  # ===========================================================================
+  # MONITOREO
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # nginx-prometheus-exporter: Nginx no habla el formato de Prometheus, así
+  # que este contenedor lee la página /stub_status y la traduce a métricas.
+  # ---------------------------------------------------------------------------
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.5.3
+    # Dirección de stub_status. "nginx" es el nombre del servicio de Nginx
+    # y 80 su puerto INTERNO (no el 8080 del host).
+    command:
+      - "--nginx.scrape-uri=http://nginx:80/stub_status"
+    # Publicado para poder ver sus métricas desde el navegador:
+    # http://localhost:9113/metrics
+    ports:
+      - "9113:9113"
+    depends_on:
+      - nginx
+    networks:
+      - red_proyecto
+
+  # ---------------------------------------------------------------------------
+  # cAdvisor (Google): mide CPU, memoria, red y disco de CADA contenedor
+  # leyendo los cgroups del kernel. Por eso necesita ver partes del sistema
+  # del host (montajes de solo lectura) y permisos elevados.
+  # Nota: las versiones nuevas se publican en ghcr.io/google/cadvisor;
+  # gcr.io/cadvisor/cadvisor (el de la presentación) dejó de actualizarse.
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.60.6
+    # Dentro del contenedor escucha en 8080, pero ese puerto del host ya lo
+    # usa Nginx; por eso se publica como 8081: http://localhost:8081
+    ports:
+      - "8081:8080"
+    # Permisos elevados: cAdvisor necesita leer información del kernel
+    # (cgroups, /dev/kmsg) que un contenedor normal no puede ver.
+    privileged: true
+    devices:
+      - /dev/kmsg
+    # -------------------------------------------------------------------------
+    # AJUSTE PARA DOCKER DESKTOP + WSL2 (ver docs/fase4-monitoreo.md)
+    # En Docker Desktop los contenedores corren en una máquina virtual (VM)
+    # propia. Los montajes típicos de cAdvisor ("/:/rootfs", "/var/lib/docker")
+    # se resuelven desde Ubuntu (WSL) y NO desde esa VM, así que cAdvisor no
+    # encontraba los contenedores (sin nombres, sin red, sin disco).
+    # Solución:
+    #  1) pid: host -> cAdvisor comparte la tabla de procesos de la VM; así
+    #     /proc/1/root es la raíz de archivos REAL de la VM.
+    #  2) Al arrancar se crean dos enlaces simbólicos hacia esa raíz:
+    #       /rootfs          -> /proc/1/root                 (red y procesos)
+    #       /var/lib/docker  -> /proc/1/root/var/lib/docker  (uso de disco)
+    #     y luego se ejecuta el arranque normal de la imagen (entrypoint.sh).
+    #  3) --containerd apunta al socket de containerd de la VM (nombres).
+    # En Linux nativo bastarían los montajes estándar de la documentación.
+    # -------------------------------------------------------------------------
+    pid: host
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        ln -sfn /proc/1/root /rootfs &&
+        ln -sfn /proc/1/root/var/lib/docker /var/lib/docker &&
+        exec /usr/bin/entrypoint.sh "$@"
+      - cadvisor
+    # Montajes de solo lectura con lo que cAdvisor necesita observar:
+    volumes:
+      - /var/run:/var/run:ro                  # socket de Docker: nombres de los contenedores
+      - /sys:/sys:ro                          # cgroups: CPU y memoria de cada contenedor
+      - /dev/disk/:/dev/disk:ro               # información de discos
+    # Argumentos para cAdvisor (llegan a entrypoint.sh como "$@"):
+    # --docker_only: mide solo los contenedores de Docker (no cada proceso del host).
+    # --housekeeping_interval: cada cuánto recalcula; 5 s, igual que Prometheus.
+    # --containerd: socket de containerd DENTRO de la VM. Sin esto cAdvisor no
+    #   reconoce los contenedores y solo reporta la serie raíz "/".
+    command:
+      - "--docker_only=true"
+      - "--housekeeping_interval=5s"
+      - "--containerd=/proc/1/root/run/containerd/containerd.sock"
+    networks:
+      - red_proyecto
+
+  # ---------------------------------------------------------------------------
+  # Prometheus: visita los /metrics de los backends, del exporter y de
+  # cAdvisor, y guarda las series de tiempo.
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    ports:
+      - "9090:9090"                           # interfaz web: http://localhost:9090
+    volumes:
+      # Bind mount de solo lectura de la CARPETA ./prometheus (contiene
+      # prometheus.yml). Se monta la carpeta y no el archivo por el mismo
+      # problema de Docker Desktop/WSL2 visto con Nginx en la Fase 1.
+      - ./prometheus:/etc/prometheus:ro
+      # Volumen con nombre: aquí Prometheus guarda sus datos (/prometheus).
+      # Sobrevive a "docker compose down"; solo se borra con "down -v".
+      - prometheus_data:/prometheus
+    depends_on:
+      - app1
+      - app2
+      - app3
+      - nginx-exporter
+      - cadvisor
+    networks:
+      - red_proyecto
+
+# -----------------------------------------------------------------------------
+# Volúmenes con nombre: almacenamiento administrado por Docker que sobrevive
+# aunque se eliminen los contenedores (persistencia de datos).
+# -----------------------------------------------------------------------------
+volumes:
+  prometheus_data:
 
 # -----------------------------------------------------------------------------
 # Red Docker personalizada (tipo bridge). Todos los servicios se conectan a

@@ -1,0 +1,46 @@
+# =============================================================================
+# Configuración de Prometheus
+# -----------------------------------------------------------------------------
+# Prometheus funciona por "scraping": cada cierto tiempo VISITA la URL /metrics
+# de cada objetivo (target), lee los valores y los guarda en su base de datos
+# de series de tiempo (en el volumen prometheus_data).
+# Los targets se escriben con el NOMBRE DE SERVICIO de docker-compose.yml:
+# el DNS de la red red_proyecto los traduce a la IP de cada contenedor.
+# =============================================================================
+
+global:
+  # Cada cuánto visita Prometheus todos los targets.
+  # El valor por defecto es 15 s; se baja a 5 s porque las pruebas de carga
+  # duran 1-2 minutos y con 15 s las gráficas tendrían muy pocos puntos.
+  scrape_interval: 5s
+  # Tiempo máximo de espera de cada visita (debe ser <= scrape_interval).
+  scrape_timeout: 4s
+
+scrape_configs:
+
+  # ---------------------------------------------------------------------------
+  # 1) Los 3 backends Flask: exponen /metrics con prometheus_client
+  #    (http_requests_total y http_request_duration_seconds).
+  #    Se leen DIRECTAMENTE (app1:5000...) y no a través de Nginx, porque por
+  #    Nginx cada visita caería en un backend distinto.
+  # ---------------------------------------------------------------------------
+  - job_name: "backends"
+    metrics_path: /metrics          # es el valor por defecto; se escribe para que sea explícito
+    static_configs:
+      - targets: ["app1:5000", "app2:5000", "app3:5000"]
+
+  # ---------------------------------------------------------------------------
+  # 2) nginx-prometheus-exporter: lee /stub_status de Nginx y lo publica como
+  #    métricas (nginx_connections_active, nginx_http_requests_total...).
+  # ---------------------------------------------------------------------------
+  - job_name: "nginx"
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  # ---------------------------------------------------------------------------
+  # 3) cAdvisor: uso de recursos de CADA contenedor (CPU, memoria, red, disco).
+  #    Dentro de la red escucha en el puerto 8080 (en el host se publica como 8081).
+  # ---------------------------------------------------------------------------
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
