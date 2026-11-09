@@ -4,8 +4,8 @@
 # Describe en un solo archivo todos los contenedores de la infraestructura.
 # Se levanta con:   docker compose up -d --build
 #
-# Servicios: 3 backends + Nginx (tráfico) y nginx-exporter, cAdvisor y
-# Prometheus (monitoreo). Grafana se agrega en la Fase 5.
+# Servicios: 3 backends + Nginx (tráfico) y nginx-exporter, cAdvisor,
+# Prometheus y Grafana (monitoreo).
 # =============================================================================
 
 services:
@@ -196,12 +196,35 @@ services:
     networks:
       - red_proyecto
 
+  # ---------------------------------------------------------------------------
+  # Grafana: dibuja los dashboards consultando a Prometheus.
+  # Interfaz: http://localhost:3000  (usuario admin / contraseña admin la
+  # primera vez; Grafana pide cambiarla).
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:13.2.4
+    ports:
+      - "3000:3000"
+    volumes:
+      # Volumen con nombre: base de datos de Grafana (usuarios, DASHBOARDS
+      # creados en la interfaz...). Sobrevive a "docker compose down";
+      # "down -v" lo borraría junto con los dashboards.
+      - grafana_data:/var/lib/grafana
+      # Bind mount de solo lectura: conexión automática a Prometheus
+      # (grafana/provisioning/datasources/prometheus.yml).
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - red_proyecto
+
 # -----------------------------------------------------------------------------
 # Volúmenes con nombre: almacenamiento administrado por Docker que sobrevive
 # aunque se eliminen los contenedores (persistencia de datos).
 # -----------------------------------------------------------------------------
 volumes:
   prometheus_data:
+  grafana_data:
 
 # -----------------------------------------------------------------------------
 # Red Docker personalizada (tipo bridge). Todos los servicios se conectan a

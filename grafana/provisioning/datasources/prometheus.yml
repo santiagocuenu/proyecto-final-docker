@@ -1,0 +1,26 @@
+# =============================================================================
+# Fuente de datos de Grafana (provisioning)
+# -----------------------------------------------------------------------------
+# Grafana lee esta carpeta al arrancar y crea la conexión a Prometheus sola,
+# sin configurarla a mano en la interfaz. Así la conexión existe siempre,
+# aunque se pierda el volumen grafana_data.
+# (Los DASHBOARDS no se crean aquí: los arma el equipo en la interfaz.)
+# =============================================================================
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    # "proxy": las consultas las hace el SERVIDOR de Grafana (dentro de la red
+    # Docker), no el navegador. Por eso la URL usa el nombre del servicio.
+    access: proxy
+    # OJO: NO es localhost:9090. Dentro del contenedor de Grafana, "localhost"
+    # es el propio Grafana; Prometheus se alcanza por su nombre de servicio.
+    url: http://prometheus:9090
+    isDefault: true
+    # Igual al scrape_interval de prometheus.yml: Grafana no pide más detalle
+    # del que Prometheus tiene.
+    jsonData:
+      timeInterval: 5s
+    # No se puede modificar desde la interfaz (evita romperla por error).
+    editable: false
