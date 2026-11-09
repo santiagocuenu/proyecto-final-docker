@@ -4,7 +4,7 @@ Infraestructura en contenedores Docker: **Nginx** como proxy inverso y balancead
 delante de **3 backends** Flask, con monitoreo de **Prometheus**, **Grafana**,
 **nginx-prometheus-exporter** y **cAdvisor**, y pruebas de carga con **Artillery**.
 
-**Integrantes:** _(completar con los nombres de los 3 integrantes)_
+**Integrantes:** Sara Martínez Arboleda, Santiago Cuenú Alomia y Gabriela Ortega Medina
 
 ---
 
