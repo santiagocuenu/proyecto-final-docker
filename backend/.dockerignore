@@ -1,0 +1,8 @@
+# Archivos que Docker NO debe enviar al construir la imagen.
+# Hace la construcción más rápida y evita meter basura o secretos en la imagen.
+__pycache__/
+*.pyc
+.env
+*.log
+Dockerfile
+.dockerignore

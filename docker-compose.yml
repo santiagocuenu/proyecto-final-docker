@@ -1,0 +1,98 @@
+# =============================================================================
+# docker-compose.yml – Proyecto final de Sistemas Operativos (UAO)
+# -----------------------------------------------------------------------------
+# Describe en un solo archivo todos los contenedores de la infraestructura.
+# Se levanta con:   docker compose up -d --build
+#
+# Fase 1 (base): 3 backends + Nginx. El monitoreo (Prometheus, Grafana,
+# nginx-exporter y cAdvisor) se agrega en la Fase 4.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Backends: 3 contenedores construidos con el MISMO Dockerfile (./backend).
+  # Solo cambia SERVER_NAME, que es lo que cada uno muestra en su respuesta.
+  # No tienen "ports:": no son accesibles desde el host, solo desde la red
+  # interna. Así nadie puede saltarse el proxy.
+  # ---------------------------------------------------------------------------
+  app1:
+    build: ./backend
+    environment:
+      SERVER_NAME: "server 1"
+    # Docker consulta /health cada 5 s. Si responde, el contenedor queda
+    # "healthy"; Nginx espera a que los 3 lo estén antes de arrancar.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    networks:
+      - red_proyecto
+
+  app2:
+    build: ./backend
+    environment:
+      SERVER_NAME: "server 2"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    networks:
+      - red_proyecto
+
+  app3:
+    build: ./backend
+    environment:
+      SERVER_NAME: "server 3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    networks:
+      - red_proyecto
+
+  # ---------------------------------------------------------------------------
+  # Nginx: proxy inverso y balanceador. Es la ÚNICA puerta de entrada.
+  # ---------------------------------------------------------------------------
+  nginx:
+    # Versión fija (nada de :latest) para que el entorno sea reproducible.
+    image: nginx:1.27.5-alpine
+    # Publica el puerto 80 del contenedor como 8080 en el host:
+    # en el navegador se entra por http://localhost:8080
+    ports:
+      - "8080:80"
+    # Bind mount de solo lectura (:ro) de la CARPETA ./nginx sobre conf.d.
+    # Nginx carga todos los *.conf de conf.d, así que lee nuestro nginx.conf
+    # (y la configuración por defecto de la imagen queda tapada).
+    # Se monta la carpeta y no el archivo suelto porque, en Docker Desktop con
+    # WSL2, si un editor reemplaza el archivo al guardarlo, el montaje de un
+    # archivo suelto queda apuntando al viejo y Nginx no vuelve a arrancar
+    # (error "no such file or directory", visto en la Fase 1).
+    volumes:
+      - ./nginx:/etc/nginx/conf.d:ro
+    # Nginx solo arranca cuando los 3 backends están "healthy". Si arrancara
+    # antes, fallaría con "host not found in upstream".
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+      app3:
+        condition: service_healthy
+    networks:
+      - red_proyecto
+
+# -----------------------------------------------------------------------------
+# Red Docker personalizada (tipo bridge). Todos los servicios se conectan a
+# ella y se encuentran por NOMBRE gracias a su DNS interno (por ejemplo,
+# Nginx llega a "app1:5000"). La red bridge por defecto no tiene ese DNS.
+# -----------------------------------------------------------------------------
+networks:
+  red_proyecto:
+    driver: bridge
