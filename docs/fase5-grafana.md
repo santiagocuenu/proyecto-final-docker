@@ -2,8 +2,8 @@
 
 Fecha: 9 de noviembre de 2026
 
-> **Pendiente:** guía clic por clic para que el equipo arme el dashboard a mano en la interfaz
-> (se entregará al terminar el proyecto). Las consultas de abajo ya están probadas.
+> **Guía clic por clic** para que el equipo arme el dashboard a mano:
+> [`guia-dashboard-grafana.md`](guia-dashboard-grafana.md). Las consultas de abajo ya están probadas.
 
 ## Qué se hizo
 
